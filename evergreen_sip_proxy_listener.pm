@@ -39,23 +39,23 @@ sub socketlisten
     my $alldata = '';
     
     # Make sure that the socket is flushing
-    print "flush: ".$self->{connection}->autoflush."\n";
+    # print "flush: ".$self->{connection}->autoflush."\n";
     # print "Listening\n";
     
     # execution will stop here until the NEW client initiates a connection
     # if we already have a client, then we move onto recv
     my $newClient = 0;
-    print "Accepting new connections on blank socket\n" if  !$self->{client_socket};
+    $self->{log}->addLogLine("SIPLISTENER Thread[$$] Accepting new connections on blank socket") if  !$self->{client_socket};
     $newClient = 1 if  !$self->{client_socket};
     $self->{client_socket} = $self->{connection}->accept() if !$self->{client_socket};
     my $socket = $self->{client_socket};
     binmode ($socket,":utf8");
-    print "moving into recv\n";
+    $self->{log}->addLogLine("SIPLISTENER Thread[$$] moving into recv");
     if($newClient)
     {
         my $client_address = $self->{client_socket}->peerhost();
         my $client_port = $self->{client_socket}->peerport();
-        $self->{log}->addLine("connection from $client_address:$client_port");
+        $self->{log}->addLogLine("SIPLISTENER Thread[$$] connection from $client_address:$client_port");
     }
     my $data='';
     
@@ -68,7 +68,7 @@ sub socketlisten
         $| = 1;
         $self->{connection}->autoflush;
         # print "flush: ".$self->{connection}->autoflush."\n";
-        if($select->can_read(.25))
+        if($select->can_read(.1))
         {
             # execution will pause here as long as there is a socket. it will wait for data
             $socket->recv($data, 1024);
@@ -76,21 +76,20 @@ sub socketlisten
             {
                 $lastdt = DateTime->now(time_zone => "local");
                 $skipdurationcheck = 1;
-                $self->{log}->addLine("data = $data");
-                $self->{log}->addLine("alldata = $alldata");
                 $alldata.=$data;
+                $self->{log}->addLogLine("SIPLISTENER Thread[$$] alldata = $alldata");
                 if(length($alldata) > 0)
                 {
                     if (  (ord(substr($alldata,-1)) eq "10")  || (ord(substr($alldata,-1)) eq "13") )
                     {
-                        $self->{log}->addLine("return carrage detected");
+                        $self->{log}->addLogLine("SIPLISTENER Thread[$$] return carrage detected");
                         last;
                     }
                 }
             }
             else
             {
-                print "Data was blank listener\n";
+                $self->{log}->addLogLine("SIPLISTENER Thread[$$] Data was blank");
                 $skipdurationcheck = 0;
             }
         }
@@ -100,7 +99,8 @@ sub socketlisten
             # The while loop would have looped only because the socket isn't really there. 
             # The timer will prevent this from never ending
             # We're dead, let's seppuku
-            print "seppeku\n";
+            $self->{log}->addLogLine("SIPLISTENER Thread[$$] seppeku");
+            breakdown($self);
             die "Lost client";
         }
     }
@@ -121,7 +121,7 @@ sub continueconversation
         {
             $self->{logincache} = $data;
             $response = setupclient($self, 1);
-            print "Reset login with Evergreen - got '$response'\n";
+            $self->{log}->addLogLine("SIPLISTENER Thread[$$] Reset login with Evergreen - got '$response'");
             $self->{client_socket}->send($response);
         }
         else
@@ -136,12 +136,13 @@ sub continueconversation
         {
             setupclient($self, 1);
             $response = $self->{sipclient}->send($data);
-            print "We had an issue with the Evergreen SIP server. Created a new connection\n";
+            $self->{log}->addLogLine("SIPLISTENER Thread[$$] We had an issue with the Evergreen SIP server. Created a new connection");
         }
-        print "responding to our client with '$response' \n";
+        $self->{log}->addLogLine("SIPLISTENER Thread[$$] responding to our client with '$response'");
         $self->{client_socket}->send($response);
         $data = socketlisten($self);
     }
+    breakdown($self);
     die "Lost connection to ".$self->{client_socket}->peerport();
 }
 
@@ -153,8 +154,13 @@ sub setupclient
     # connection is down or never existed
     if( (!$self->{sipclient}) or (!$self->{sipclient}->is_healthy) or $reset)
     {
-        print "setting up new client connection\n";
+        $self->{log}->addLogLine("SIPLISTENER Thread[$$] setting up new client connection");
+        $self->{log}->addLogLine("SIPLISTENER Thread[$$] ".$self->{conf}{server});
+        $self->{log}->addLogLine("SIPLISTENER Thread[$$] ".$self->{conf}{port});
+        $self->{log}->addLogLine("SIPLISTENER Thread[$$] ".$self->{conf}{evergreen_timeout});
+        
         # Call DESTROY
+        $self->{sipclient}->breakdown() if $self->{sipclient};
         undef $self->{sipclient};
         $self->{sipclient} = new evergreen_sip_client(
         $self->{conf}{server},
@@ -163,15 +169,15 @@ sub setupclient
         $self->{log}
         );
         my $healthy =  $self->{sipclient}->start();
-        print "Healthy = $healthy\n";
+        $self->{log}->addLogLine("SIPLISTENER Thread[$$] Healthy = $healthy");
         return $healthy if !$healthy;
         return $self->{sipclient}->send($self->{logincache});
-        $self->{client_socket}->close();
+        breakdown($self);
         die "Unable to connect to ".$self->{conf}{server};
     }
     else
     {
-        print "proxied server connection is still active\n";
+        $self->{log}->addLogLine("SIPLISTENER Thread[$$] proxied server connection is still active");
     }
 }
 
@@ -197,12 +203,20 @@ sub duration
     my $ret = ($timeout > $seconds);
     return $ret;
 }
+
+sub breakdown
+{
+    my $self = shift;
+    $self->{log}->addLogLine("SIPLISTENER Thread[$$] SIP PROXY LISTENER DESTROY");
+    $self->{client_socket}->close();
+    $self->{sipclient}->breakdown();
+    shutdown($self->{client_socket}, 2);
+}
  
 sub DESTROY
 {
 	my $self = shift;
-    $self->{client_socket}->close();
-    shutdown($self->{client_socket}, 2);
+    breakdown($self);
     undef $self->{client_socket};
     undef $self->{sipclient};
 	undef $self;

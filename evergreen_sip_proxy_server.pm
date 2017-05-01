@@ -21,7 +21,7 @@ sub new
         connection => shift,
         listeners => \@a
 	};
-	
+    
 	bless $self, $class;
     return $self;
 }
@@ -63,13 +63,13 @@ sub sip_listen
     print "\n";
     
     while(is_healthy($self))
-    {
+    {   
         my $newclient = new evergreen_sip_proxy_listener($self->{connection},$self->{log},$self->{conf});
-        
         my $data = $newclient->socketlisten();
         my $thread = threads->create( 'spin_thread', $newclient, $data );
-        push $self->{listeners}, $thread;
-        print "OK - we had a new client, so we are waiting for a new one now\n";
+        $thread->detach();
+        # push $self->{listeners}, $thread;
+        $self->{log}->addLogLine("SIPPROXYSERVER Thread[$$]  OK - we had a new client, so we are waiting for a new one now");
     }
 
     $self->{connection}->close();
@@ -87,7 +87,7 @@ sub spin_thread
     my $client = shift;
     my $data = shift;
     #print "Thread starting with this:\n".Dumper($client);
-    print Dumper($data);
+    # print Dumper($data);
     $client->continueconversation($data);
 }
  

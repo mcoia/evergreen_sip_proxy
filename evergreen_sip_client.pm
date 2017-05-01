@@ -48,9 +48,10 @@ sub sipconnect
     $self->{connection}->close() if($self->{connection});
     undef $self->{connection};
     
-    
+    # print "SIP Connect\n".$self->{server}."\n".$self->{port}."\n".SOCK_STREAM;
     
     # create a connecting socket
+    
     $self->{connection} = new IO::Socket::INET (
         PeerHost => $self->{server},
         PeerPort => $self->{port},
@@ -91,7 +92,7 @@ sub _send
     
     while (!is_healthy($self))
     {
-        print "We are not connected to the server, we are attempting to connect now\n";
+        $self->{log}->addLogLine("SIPCLIENT Thread[$$] We are not connected to the server, we are attempting to connect now");
         sipconnect($self);
     }
     
@@ -101,14 +102,14 @@ sub _send
     $select->add($socket);
     if($select->can_write(.25) )
     {
-        print "sipclient sending '$data'\n";
+        $self->{log}->addLogLine("SIPCLIENT Thread[$$] sipclient sending '$data'");
         $socket->send($data);
         $self->{lastx} = $data;
         $self->{lastxdt} = DateTime->now(time_zone => "local");
     }
     else
     {
-        print "Unable to transmit\n";
+        $self->{log}->addLogLine("SIPCLIENT Thread[$$] Unable to transmit");
         return 'NOT CONNECTED\r';
     }
     
@@ -123,7 +124,7 @@ sub _send
         $| = 1;
         $loops++;
         $socket->autoflush;
-        if($select->can_read(.25))
+        if($select->can_read(.1))
         {
             $socket->recv($response,1024);
             if($response ne '')
@@ -131,29 +132,28 @@ sub _send
                 $lastdt = DateTime->now(time_zone => "local");
                 $skipdurationcheck = 1;
                 $self->{lastr} = $response;
-                $self->{log}->addLine("SIPCLIENT data = $response");
-                $self->{log}->addLine("SIPCLIENT alldata = $alldata");
                 $alldata.=$response;
+                $self->{log}->addLogLine("SIPCLIENT Thread[$$] alldata = $alldata");
                 if(length($alldata) > 0)
                 {
                     if (  (ord(substr($alldata,-1)) eq "10")  || (ord(substr($alldata,-1)) eq "13") )
                     {
-                        $self->{log}->addLine("SIPCLIENT return carrage detected");
+                        $self->{log}->addLogLine("SIPCLIENT Thread[$$] return carrage detected");
                         last;
                     }
                 }
             }
             else
             {
-                print "Data was blank client $loops " if(($loops % 30) == 0);
-                print "data: $alldata\n" if(($loops % 30) == 0);
+                $self->{log}->addLogLine("SIPCLIENT Thread[$$] Data was blank client $loops loops") if(($loops % 30) == 0);
+                $self->{log}->addLogLine("SIPCLIENT Thread[$$] data: $alldata\n") if(($loops % 30) == 0);
             }
         }
         # Let's assume that we are not going to get data beyond what we already have
         # after waiting for .5 second
         if( ( duration($self) >  .5 ) && $alldata ne '' )
         {
-            print "it's been longer than .5 seconds and we have $alldata\n";
+            $self->{log}->addLogLine("SIPCLIENT Thread[$$] it's been longer than .5 seconds and we have $alldata\n");
             last;
         }
         if(!is_healthy($self)) {last;}
@@ -164,7 +164,7 @@ sub _send
         }
     }
     
-    print "received response: $alldata\n";
+    # print "received response: $alldata\n";
     return $alldata;
 }
 
@@ -188,12 +188,18 @@ sub is_healthy
     # print Dumper($self->{connection}->error);
     return !$self->{connection}->error;
 }
+
+sub breakdown
+{
+    my $self = shift;
+    $self->{connection}->close();
+    shutdown($self->{connection}, 2);
+}
  
 sub DESTROY
 {
 	my $self = shift;
-	$self->{connection}->close();
-    shutdown($self->{connection}, 2);
+    breakdown($self);
 	undef $self->{connection};
 	undef $self;
 }

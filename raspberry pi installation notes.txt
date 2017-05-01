@@ -1,0 +1,14 @@
+fresh raspberry pi
+
+apt-get update
+apt-get -y install cifs-utils make gcc perl 
+
+cpan
+install CPAN
+
+export PERL_MM_USE_DEFAULT=1
+perl -MCPAN -e 'install DateTime'
+perl -MCPAN -e 'install DateTime::Format'
+perl -MCPAN -e 'install DateTime::Format::Duration'
+perl -MCPAN -e 'install IO::Socket::INET'
+
