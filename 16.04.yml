@@ -1,0 +1,8 @@
+---
+  samba_share: /mnt/share/sip_proxy
+  log_directory: /mnt/share/sip_proxy/logs
+  share_user: pi
+  share_user_pass: thepassword
+  samba_config_path: /sip_proxy/samba.txt
+
+...

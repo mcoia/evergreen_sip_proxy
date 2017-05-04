@@ -105,7 +105,7 @@ sub socketlisten
         }
     }
     
-    $self->{log}->addLogLine("Thread[$$] - $client_address:$client_port $data");
+    $self->{log}->addLogLine("SIPLISTENER Thread[$$] - $client_address:$client_port $data");
     return $alldata;
 }
 

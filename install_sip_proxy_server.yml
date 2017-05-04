@@ -1,0 +1,87 @@
+---
+### ansible-playbook /mnt/evergreen/playbooks/restart_app_services.yml --private-key /home/blake/.ssh/id_rsa -vvvv -e "hosts=192.168.12.49"
+
+- hosts: '127.0.0.1'
+  connection: local
+  remote_user: ubuntu
+  become_method: sudo
+  vars_files:
+    - 16.04.yml
+  tasks:
+  - name: starting ssh
+    service:
+      name: ssh
+      state: started
+  - lineinfile: "dest=/etc/sudoers state=present regexp='^%sudo' line='%sudo ALL=(ALL) NOPASSWD: ALL'"
+  - name: Setting Timezone
+    become: true
+    ignore_errors: yes
+    shell: echo America/Chicago > /etc/timezone
+  - name: Setting Timezone
+    become: true
+    ignore_errors: yes
+    shell: timedatectl set-timezone America/Chicago
+  - name: Creating {{ share_user }} user
+    become: true
+    user:
+      name: "{{ share_user }}"
+      shell: /bin/bash
+      group: "{{ share_user }}"
+  - name: Creating share folder
+    become: true
+    file: path=/mnt/share/sip_proxy state=directory owner={{ share_user }} group={{ share_user }} mode=0775 recurse=yes
+  - name: Creating share logs folder
+    become: true
+    file: path={{ log_directory }} state=directory owner={{ share_user }} group={{ share_user }} mode=0775
+  - name: Install Perl modules install DateTime
+    become: true
+    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install DateTime'
+    environment:
+      PATH: "{{ ansible_env.PATH }}"
+  - name: Install Perl modules install DateTime::Format
+    become: true
+    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install DateTime::Format'
+    environment:
+      PATH: "{{ ansible_env.PATH }}"
+  - name: Install Perl modules DateTime::Format::Duration
+    become: true
+    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install DateTime::Format::Duration'
+    environment:
+      PATH: "{{ ansible_env.PATH }}"
+  - name: Install Perl modules install IO::Select
+    become: true
+    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install IO::Select'
+    environment:
+      PATH: "{{ ansible_env.PATH }}"
+  - name: Install Perl modules  IO::Socket::INET
+    become: true
+    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install IO::Socket::INET'
+    environment:
+      PATH: "{{ ansible_env.PATH }}"
+  - name: Setup Logrotate
+    become: true
+    file: 
+      path: /etc/logrotate.d/sip_proxy
+      owner: root
+      group: root
+      mode: 0644
+      state: touch
+  - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='}' state=present regexp='{{ log_directory }}' line='{{ log_directory }}/*.log {'"
+  - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='}' state=present regexp='rotate' line='  rotate 14'"
+  - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='}' state=present regexp='compress' line='  compress'"
+  - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='}' state=present regexp='size' line='  size 1M'"
+  - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='}' state=present regexp='notifempty' line='  notifempty'"
+  - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='endoffile' state=present regexp='\\}' line='}'"
+
+  - lineinfile: "dest={{ samba_config_path }} state=present regexp='path' line='        path = {{ samba_share }}'"
+  - lineinfile: "dest={{ samba_config_path }} state=present regexp='force user' line='        force user = {{ share_user }}'"
+  - name: Install samba
+    apt: name=samba
+  - name: Setup samba
+    become: true
+    shell: "cat {{ samba_config_path }} >> /etc/samba/smb.conf"
+  - name: Setup samba
+    lineinfile: "dest=/etc/samba/smb.conf state=present insertafter='\\[global\\]' regexp='security = ' line='security = user'"
+    become: true
+
+...

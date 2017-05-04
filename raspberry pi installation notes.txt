@@ -1,7 +1,9 @@
 fresh raspberry pi
 
 apt-get update
-apt-get -y install cifs-utils make gcc perl 
+apt-get -y install cifs-utils make gcc perl samba ansible
+
+mkdir /sip_proxy && cp /mnt/evergreen/sip_proxy/* /sip_proxy
 
 cpan
 install CPAN

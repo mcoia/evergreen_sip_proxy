@@ -1,0 +1,8 @@
+[pi]
+        path = /mnt/share/sip_proxy
+        browseable = yes
+        writeable = yes
+        read only = no
+        guest ok = yes
+        create mask = 0755
+        force user = pi
