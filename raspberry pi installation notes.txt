@@ -1,17 +1,26 @@
 fresh raspberry pi
 
+mkdir -p /mnt/evergreen
 apt-get update
 apt-get -y install cifs-utils make gcc perl samba ansible
 
-mkdir /sip_proxy && cp /mnt/evergreen/sip_proxy/* /sip_proxy
+apt-get remove cloud-init --purge
+
+mkdir /sip_proxy && cp -R /mnt/evergreen/sip_proxy/* /sip_proxy
 
 cpan
 install CPAN
 
-export PERL_MM_USE_DEFAULT=1
-perl -MCPAN -e 'install DateTime'
-perl -MCPAN -e 'install DateTime::Format'
-perl -MCPAN -e 'install DateTime::Format::Duration'
-perl -MCPAN -e 'install IO::Select'
-perl -MCPAN -e 'install IO::Socket::INET'
+cd /sip_proxy && ansible-playbook install_sip_proxy_server.yml
+
+
+auto eth0
+iface eth0 inet static
+        address 192.168.11.55
+        netmask 255.255.255.0
+        network 192.168.11.0
+        broadcast 192.168.11.255
+        gatewaay 192.168.11.1
+        dns-nameservers 192.168.11.3 8.8.8.8
+        dns-search local
 

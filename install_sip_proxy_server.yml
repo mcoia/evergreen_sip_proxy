@@ -21,6 +21,10 @@
     become: true
     ignore_errors: yes
     shell: timedatectl set-timezone America/Chicago
+  - name: Setting up group
+    group:
+      name: "{{ share_user }}"
+      state: present
   - name: Creating {{ share_user }} user
     become: true
     user:
@@ -29,7 +33,7 @@
       group: "{{ share_user }}"
   - name: Creating share folder
     become: true
-    file: path=/mnt/share/sip_proxy state=directory owner={{ share_user }} group={{ share_user }} mode=0775 recurse=yes
+    file: path={{ samba_share }} state=directory owner={{ share_user }} group={{ share_user }} mode=0775 recurse=yes
   - name: Creating share logs folder
     become: true
     file: path={{ log_directory }} state=directory owner={{ share_user }} group={{ share_user }} mode=0775
@@ -71,8 +75,10 @@
   - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='}' state=present regexp='compress' line='  compress'"
   - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='}' state=present regexp='size' line='  size 1M'"
   - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='}' state=present regexp='notifempty' line='  notifempty'"
+  - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='}' state=present regexp='^su' line='  su {{ share_user }}'"
   - lineinfile: "dest=/etc/logrotate.d/sip_proxy insertbefore='endoffile' state=present regexp='\\}' line='}'"
-
+  
+  - lineinfile: "dest={{ samba_config_path }} state=present regexp='\\[' line='[{{ samba_share_name }}]'"
   - lineinfile: "dest={{ samba_config_path }} state=present regexp='path' line='        path = {{ samba_share }}'"
   - lineinfile: "dest={{ samba_config_path }} state=present regexp='force user' line='        force user = {{ share_user }}'"
   - name: Install samba
@@ -82,6 +88,40 @@
     shell: "cat {{ samba_config_path }} >> /etc/samba/smb.conf"
   - name: Setup samba
     lineinfile: "dest=/etc/samba/smb.conf state=present insertafter='\\[global\\]' regexp='security = ' line='security = user'"
+  - name: Obfuscate the server NETBIOS name
+    lineinfile: "dest=/etc/samba/smb.conf state=present insertafter='\\[global\\]' regexp='server string' line='server string = pipc'"
     become: true
+  - name: Set {{ share_user }} password
+    become: true
+    shell: echo {{ share_user_pass }}> /etc/samba/p.txt && echo {{ share_user_pass }}>> /etc/samba/p.txt && cat /etc/samba/p.txt | smbpasswd -a -s {{ share_user }} && rm /etc/samba/p.txt
+  - name: Restart Samba
+    service:
+      name: smbd
+      state: restarted
+  - lineinfile: "dest={{ proxy_service }} state=present regexp='^PATH_TO_SIP_SERVER' line='PATH_TO_SIP_SERVER=\"{{ proxy_server }}\"'"
+  - lineinfile: "dest={{ proxy_service }} state=present regexp='^PATH_TO_CONF' line='PATH_TO_CONF=\"{{ path_to_server_conf }}\"'"
+  - lineinfile: "dest={{ proxy_service }} state=present regexp='^LAST_CONF=' line='LAST_CONF=\"{{ path_to_last_conf }}\"'"
+  
+### Setup SSH Tunnel stuff
+  - name: Make /home/{{ share_user }}/.ssh
+    become: true
+    file: 
+      path: /home/{{ share_user }}/.ssh
+      owner: "{{ share_user }}"
+      group: "{{ share_user }}"
+      mode: 0700
+      state: directory
+  - name: Copy SSH Keys
+    become: true
+    shell: cp {{ ssh_tunnel_private_key }} /home/{{ share_user }}/.ssh/id_rsa
+  - name: Copy SSH Keys
+    become: true
+    shell: cp {{ ssh_tunnel_public_key }} /home/{{ share_user }}/.ssh/id_rsa.pub && chown {{ share_user }}:{{ share_user }} /home/{{ share_user }}/.ssh/id_rsa*  &&  chmod 600 /home/{{ share_user }}/.ssh/id_rsa*
 
+  - name: Ensure the cron for starting/restarting service is present
+    become: true
+    cron: name="(RE)start SIP proxy server" job=". ~/.bashrc && cd {{ proxy_server_root_folder }} && {{ proxy_service }}"
+  - name: Start the proxy server
+    become: true
+    shell: "cd {{ proxy_server_root_folder }} && {{ proxy_service }} &"
 ...

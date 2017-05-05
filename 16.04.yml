@@ -4,5 +4,13 @@
   share_user: pi
   share_user_pass: thepassword
   samba_config_path: /sip_proxy/samba.txt
+  samba_share_name: sipproxy
+  ssh_tunnel_private_key: /sip_proxy/keys/id_rsa
+  ssh_tunnel_public_key: /sip_proxy/keys/id_rsa.pub
+  proxy_server: /sip_proxy/sip_proxy.pl
+  path_to_server_conf: /mnt/share/sip_proxy/sip_server.conf
+  path_to_last_conf: /sip_proxy/sip_server_last.conf  
+  proxy_service: /sip_proxy/evergreen_sip_proxy_launch.sh
+  proxy_server_root_folder: /sip_proxy
 
 ...
