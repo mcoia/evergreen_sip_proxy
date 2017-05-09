@@ -7,6 +7,11 @@
   samba_share_name: sipproxy
   ssh_tunnel_private_key: /sip_proxy/keys/id_rsa
   ssh_tunnel_public_key: /sip_proxy/keys/id_rsa.pub
+  ssh_tunnel_shortname_label: ME
+  ssh_tunnel_username: pi
+  ssh_tunnel_hostname: ssh.server.running.SIP.com
+  ssh_tunnel_remote_port: 6001
+  ssh_tunnel_local_port: 6002
   proxy_server: /sip_proxy/sip_proxy.pl
   path_to_server_conf: /mnt/share/sip_proxy/sip_server.conf
   path_to_last_conf: /sip_proxy/sip_server_last.conf  

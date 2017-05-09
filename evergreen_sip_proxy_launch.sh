@@ -3,6 +3,7 @@
 PATH_TO_SIP_SERVER="/sip_proxy/sip_proxy.pl"
 PATH_TO_CONF="/mnt/share/sip_proxy/sip_server.conf"
 LAST_CONF="/sip_proxy/sip_server_last.conf"
+AUTOSSH_SHORT_NAME_LABEL="ME"
 
 # If the "last" version of the config file doesn't exist, let's create it
 if [ ! -f $LAST_CONF ];
@@ -14,6 +15,14 @@ CURRENT_CONF_MD5=`cat $PATH_TO_CONF | md5sum`
 LAST_CONF_MD5=`cat $LAST_CONF | md5sum`
 
 PID=`ps aux|grep -v grep|grep sip_proxy.pl|awk '{print $2}'`
+AUTOSSHPID=`ps aux|grep -v grep|grep autossh|awk '{print $2}'`
+
+if [ "$AUTOSSHPID" -gt "1" ];
+then
+    echo "autossh is running"
+else
+    autossh -M 0 -f $AUTOSSH_SHORT_NAME_LABEL
+fi
 
 START_FLAG="0"
 

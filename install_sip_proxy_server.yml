@@ -103,6 +103,8 @@
   - lineinfile: "dest={{ proxy_service }} state=present regexp='^LAST_CONF=' line='LAST_CONF=\"{{ path_to_last_conf }}\"'"
   
 ### Setup SSH Tunnel stuff
+  - name: Install autossh
+    apt: name=autossh
   - name: Make /home/{{ share_user }}/.ssh
     become: true
     file: 
@@ -111,12 +113,41 @@
       group: "{{ share_user }}"
       mode: 0700
       state: directory
+  - name: Make /home/{{ share_user }}/.ssh
+    become: true
+    file: 
+      path: /home/root/.ssh
+      owner: root
+      group: root
+      mode: 0700
+      state: directory
   - name: Copy SSH Keys
     become: true
     shell: cp {{ ssh_tunnel_private_key }} /home/{{ share_user }}/.ssh/id_rsa
   - name: Copy SSH Keys
     become: true
     shell: cp {{ ssh_tunnel_public_key }} /home/{{ share_user }}/.ssh/id_rsa.pub && chown {{ share_user }}:{{ share_user }} /home/{{ share_user }}/.ssh/id_rsa*  &&  chmod 600 /home/{{ share_user }}/.ssh/id_rsa*
+  - name: Setup .ssh/config
+    become: true
+    file: 
+      path: /home/{{ share_user }}/.ssh/config
+      owner: "{{ share_user }}"
+      group: "{{ share_user }}"
+      mode: 0644
+      state: touch
+  - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='Host\\s' line='Host {{ ssh_tunnel_shortname_label }}'"
+  - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='HostName' line='    HostName sip.missourievergreen.org'"
+  - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='IdentityFile' line='    IdentityFile /home/{{ share_user }}/.ssh/id_rsa'"
+  - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='LocalForward' line='    LocalForward {{ ssh_tunnel_local_port }} 127.0.0.1:{{ ssh_tunnel_remote_port }}'"
+  - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='StrictHostKeyChecking' line='    StrictHostKeyChecking no'"
+  - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='User' line='    User {{ ssh_tunnel_username }}'"
+  - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='ServerAliveInterval' line='    ServerAliveInterval 10'"
+  - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='ServerAliveCountMax' line='    ServerAliveCountMax 1'"
+  - name: Copy SSH config to root
+    become: true
+    shell: cp /home/{{ share_user }}/.ssh/config /root/.ssh/config && chmod 644 /root/.ssh/config
+  
+  
 
   - name: Ensure the cron for starting/restarting service is present
     become: true
