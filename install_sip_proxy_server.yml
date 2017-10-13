@@ -87,10 +87,10 @@
       group: "{{ share_user }}"
       mode: 0700
       state: directory
-  - name: Make /home/{{ share_user }}/.ssh
+  - name: Make /root/.ssh
     become: true
     file: 
-      path: /home/root/.ssh
+      path: /root/.ssh
       owner: root
       group: root
       mode: 0700
@@ -110,7 +110,7 @@
       mode: 0644
       state: touch
   - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='Host\\s' line='Host {{ ssh_tunnel_shortname_label }}'"
-  - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='HostName' line='    HostName sip.missourievergreen.org'"
+  - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='HostName' line='    HostName {{ ssh_tunnel_hostname }}'"
   - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='IdentityFile' line='    IdentityFile /home/{{ share_user }}/.ssh/id_rsa'"
   - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='LocalForward' line='    LocalForward {{ ssh_tunnel_local_port }} 127.0.0.1:{{ ssh_tunnel_remote_port }}'"
   - lineinfile: "dest=/home/{{ share_user }}/.ssh/config insertbefore='endoffile' state=present regexp='StrictHostKeyChecking' line='    StrictHostKeyChecking no'"
