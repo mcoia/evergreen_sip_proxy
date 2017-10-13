@@ -19,6 +19,7 @@ Copy this repo onto the Ubuntu machine. You will need to edit your config file a
 Once you have your config ready, you can launch the software with ./sip_proxy.pl --config [configfile]
 and that's it.
 
+I have some more advanced things in this repo that allow the proxy server to automatically restart if the configuration is changed on the fly. Since this was designed to run on a raspberry pi, I attempted to make it "self sufficient". This is done by setting up a cron job to execute the bash script here "evergreen_sip_proxy_launch.sh". This file includes some configuration variables at the top that you will need to customize. The idea is that this script will keep an MD5 has of the configuration file and if it's different from the last time it was executed, it will copy the new config into the production config directory and restart the proxy server. Also, you can take advantage of autossh to keep your tunnel alive as well. This script also looks for the existence of a file "reboot.txt" which will signal the script to reboot the OS.
 
 ## Automation
 
