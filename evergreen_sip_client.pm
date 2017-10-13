@@ -16,8 +16,8 @@ sub new
 {
     my $class = shift;
     my $self = 
-	{
-		server => shift,
+    {
+        server => shift,
         port => shift,
         timeout => shift,
         log => shift,
@@ -25,9 +25,9 @@ sub new
         lastx => '',
         lastr => '',
         lastxdt => undef
-	};
-	
-	bless $self, $class;
+    };
+    
+    bless $self, $class;
     return $self;
 }
 
@@ -198,10 +198,10 @@ sub breakdown
  
 sub DESTROY
 {
-	my $self = shift;
+    my $self = shift;
     breakdown($self);
-	undef $self->{connection};
-	undef $self;
+    undef $self->{connection};
+    undef $self;
 }
 
 1;

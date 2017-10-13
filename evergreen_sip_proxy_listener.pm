@@ -18,7 +18,7 @@ sub new
 {
     my $class = shift;
     my $self = 
-	{
+    {
         connection => shift,
         log => shift,
         conf => shift,
@@ -26,10 +26,10 @@ sub new
         sipclient => shift,
         title => shift,
         logincache => ''
-	};
+    };
     # print "Starting evergreen_sip_proxy_listener instance with this config\n";
-	# print Dumper($self->{conf});
-	bless $self, $class;
+    # print Dumper($self->{conf});
+    bless $self, $class;
     return $self;
 }
 
@@ -215,11 +215,11 @@ sub breakdown
  
 sub DESTROY
 {
-	my $self = shift;
+    my $self = shift;
     breakdown($self);
     undef $self->{client_socket};
     undef $self->{sipclient};
-	undef $self;
+    undef $self;
 }
 
 1;

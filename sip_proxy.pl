@@ -26,8 +26,8 @@ or die("Error in command line arguments\nYou can specify
 
 if(! -e $configFile)
 {
-	print "I could not find the config file: $configFile\nYou can specify the path when executing this script --configfile configfilelocation\n";
-	exit 0;
+    print "I could not find the config file: $configFile\nYou can specify the path when executing this script --configfile configfilelocation\n";
+    exit 0;
 }
 
 our $log;
@@ -50,7 +50,7 @@ if($conf)
     my $server = new evergreen_sip_proxy_server($conf{"local_port"}, $log, \%conf);
     $server->start();
   
-    $log->addLogLine(" ---------------- Script End ---------------- ");	
+    $log->addLogLine(" ---------------- Script End ---------------- ");
 }
 
 sub readConfFile
@@ -91,10 +91,10 @@ sub readConfFile
 
 sub trim
 {
-	my $string = shift;
-	$string =~ s/^\s+//;
-	$string =~ s/\s+$//;
-	return $string;
+    my $string = shift;
+    $string =~ s/^\s+//;
+    $string =~ s/\s+$//;
+    return $string;
 }
 
 exit;

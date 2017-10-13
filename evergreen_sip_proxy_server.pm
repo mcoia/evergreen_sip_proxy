@@ -14,15 +14,15 @@ sub new
     my $class = shift;
     my @a = ();
     my $self = 
-	{
+    {
         port => shift,
         log => shift,
         conf => shift,
         connection => shift,
         listeners => \@a
-	};
+    };
     
-	bless $self, $class;
+    bless $self, $class;
     return $self;
 }
 
@@ -93,11 +93,11 @@ sub spin_thread
  
 sub DESTROY
 {
-	my $self = @_[0];
-	$self->{connection}->close();
+    my $self = @_[0];
+    $self->{connection}->close();
     shutdown($self->{connection}, 2);
-	undef $self->{connection};
-	undef $self;
+    undef $self->{connection};
+    undef $self;
 }
 
 1;
