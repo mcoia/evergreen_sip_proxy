@@ -43,7 +43,7 @@ if($conf)
     my $ftime = $dt->hms;
     my $dateString = "$fdate $ftime";
     $log = new Loghandler($conf{"logfile"});
-    $log->truncFile("");
+    # $log->truncFile("");
     $log->addLogLine(" ---------------- Script Starting ---------------- ");
     
     

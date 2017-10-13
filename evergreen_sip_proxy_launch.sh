@@ -2,13 +2,20 @@
 
 PATH_TO_SIP_SERVER="/sip_proxy/sip_proxy.pl"
 PATH_TO_CONF="/mnt/share/sip_proxy/sip_server.conf"
+PATH_TO_REBOOT="/mnt/share/sip_proxy/reboot.txt"
 LAST_CONF="/sip_proxy/sip_server_last.conf"
 AUTOSSH_SHORT_NAME_LABEL="ME"
 
+rm ~/.ssh/known_hosts
 # If the "last" version of the config file doesn't exist, let's create it
 if [ ! -f $LAST_CONF ];
     then
     cat $PATH_TO_CONF > $LAST_CONF
+fi
+
+if [ -f $PATH_TO_REBOOT ];
+    then
+    rm -f $PATH_TO_REBOOT && /sbin/reboot
 fi
 
 CURRENT_CONF_MD5=`cat $PATH_TO_CONF | md5sum`
@@ -20,8 +27,8 @@ AUTOSSHPID=`ps aux|grep -v grep|grep autossh|awk '{print $2}'`
 if [ "$AUTOSSHPID" -gt "1" ];
 then
     echo "autossh is running"
-else
-    autossh -M 0 -f $AUTOSSH_SHORT_NAME_LABEL
+else    
+    autossh -N -M 0 -f $AUTOSSH_SHORT_NAME_LABEL
 fi
 
 START_FLAG="0"
@@ -49,4 +56,3 @@ then
     echo "Starting fresh"
     $PATH_TO_SIP_SERVER --config $PATH_TO_CONF
 fi
-    

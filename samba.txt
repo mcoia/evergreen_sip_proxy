@@ -3,6 +3,6 @@
         browseable = yes
         writeable = yes
         read only = no
-        guest ok = yes
+        guest ok = no
         create mask = 0755
         force user = pi

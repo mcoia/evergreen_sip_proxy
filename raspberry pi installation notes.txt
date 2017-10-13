@@ -1,10 +1,33 @@
+https://ubuntu-mate.org/about/
+MATE image 16.04.2 LTS pi 3
+https://ubuntu-mate.org/raspberry-pi/ubuntu-mate-16.04.2-desktop-armhf-raspberry-pi.img.xz
+
 fresh raspberry pi
+boot/configure then terminal:
+raspi-config
+configure boot to CLI
+
+
 
 mkdir -p /mnt/evergreen
 apt-get update
+apt-get -y remove \
+x11* gnome* libgnome* cups fonts* mate* caja* pluma* ubuntu-mate* gir1* compton libclutter* libav* libencode* \
+libgtk* java* libasm4-java libjava* cheese-common atril-common bluez libx* libdv* libchees* youtube-dl \
+splash* \
+--purge
+
+# run twice
+apt-get -y remove \
+x11* gnome* libgnome* cups fonts* mate* caja* pluma* ubuntu-mate* gir1* compton libclutter* libav* libencode* \
+libgtk* java* libasm4-java libjava* cheese-common atril-common bluez libx* libdv* libchees* youtube-dl \
+splash* \
+--purge
+
+apt autoremove
+
 apt-get -y install cifs-utils make gcc perl samba ansible
 
-apt-get remove cloud-init --purge
 
 mkdir /sip_proxy && cp -R /mnt/evergreen/sip_proxy/* /sip_proxy
 
@@ -20,7 +43,7 @@ iface eth0 inet static
         netmask 255.255.255.0
         network 192.168.11.0
         broadcast 192.168.11.255
-        gatewaay 192.168.11.1
+        gateway 192.168.11.1
         dns-nameservers 192.168.11.3 8.8.8.8
         dns-search local
 

@@ -1,5 +1,4 @@
 ---
-### ansible-playbook /mnt/evergreen/playbooks/restart_app_services.yml --private-key /home/blake/.ssh/id_rsa -vvvv -e "hosts=192.168.12.49"
 
 - hosts: '127.0.0.1'
   connection: local
@@ -37,31 +36,6 @@
   - name: Creating share logs folder
     become: true
     file: path={{ log_directory }} state=directory owner={{ share_user }} group={{ share_user }} mode=0775
-  - name: Install Perl modules install DateTime
-    become: true
-    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install DateTime'
-    environment:
-      PATH: "{{ ansible_env.PATH }}"
-  - name: Install Perl modules install DateTime::Format
-    become: true
-    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install DateTime::Format'
-    environment:
-      PATH: "{{ ansible_env.PATH }}"
-  - name: Install Perl modules DateTime::Format::Duration
-    become: true
-    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install DateTime::Format::Duration'
-    environment:
-      PATH: "{{ ansible_env.PATH }}"
-  - name: Install Perl modules install IO::Select
-    become: true
-    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install IO::Select'
-    environment:
-      PATH: "{{ ansible_env.PATH }}"
-  - name: Install Perl modules  IO::Socket::INET
-    become: true
-    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install IO::Socket::INET'
-    environment:
-      PATH: "{{ ansible_env.PATH }}"
   - name: Setup Logrotate
     become: true
     file: 
@@ -147,7 +121,31 @@
     become: true
     shell: cp /home/{{ share_user }}/.ssh/config /root/.ssh/config && chmod 644 /root/.ssh/config
   
-  
+  - name: Install Perl modules install DateTime
+    become: true
+    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install DateTime'
+    environment:
+      PATH: "{{ ansible_env.PATH }}"
+  - name: Install Perl modules install DateTime::Format
+    become: true
+    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install DateTime::Format'
+    environment:
+      PATH: "{{ ansible_env.PATH }}"
+  - name: Install Perl modules DateTime::Format::Duration
+    become: true
+    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install DateTime::Format::Duration'
+    environment:
+      PATH: "{{ ansible_env.PATH }}"
+  - name: Install Perl modules install IO::Select
+    become: true
+    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install IO::Select'
+    environment:
+      PATH: "{{ ansible_env.PATH }}"
+  - name: Install Perl modules  IO::Socket::INET
+    become: true
+    shell: export PERL_MM_USE_DEFAULT=1 && perl -MCPAN -e 'install IO::Socket::INET'
+    environment:
+      PATH: "{{ ansible_env.PATH }}"
 
   - name: Ensure the cron for starting/restarting service is present
     become: true
